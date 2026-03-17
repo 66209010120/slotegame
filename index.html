@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Spin - Slot Machine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Kanit:wght@400;600&display=swap');
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0d0d1a;
+    padding: 2rem 1rem;
+  }
+  
+  .slot-wrapper {
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 480px;
+  }
+  
+  .slot-wrapper::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%, rgba(255,200,0,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  
+  .machine-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    color: #FFD700;
+    text-align: center;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(255,215,0,0.5);
+  }
+  
+  .subtitle {
+    font-family: 'Kanit', sans-serif;
+    font-size: 14px;
+    color: rgba(255,215,0,0.6);
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+  
+  .machine-body {
+    background: linear-gradient(180deg, #2d1b69 0%, #1a0a2e 100%);
+    border: 3px solid #FFD700;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 0 40px rgba(255,215,0,0.2), inset 0 0 20px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .reels-container {
+    display: flex;
+    gap: 8px;
+    background: #0d0d1a;
+    border: 2px solid #444;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 4px 20px rgba(0,0,0,0.8);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .win-line {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 2px;
+    background: rgba(255,215,0,0.3);
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  .reel {
+    flex: 1;
+    height: 120px;
+    background: #111;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #333;
+  }
+  
+  .reel-inner {
+    position: absolute;
+    width: 100%;
+    transition: transform 0.1s linear;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .symbol {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  
+  .reel-overlay-top, .reel-overlay-bottom {
+    position: absolute;
+    left: 0; right: 0;
+    height: 35px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  
+  .reel-overlay-top { top: 0; background: linear-gradient(to bottom, #0d0d1a, transparent); }
+  .reel-overlay-bottom { bottom: 0; background: linear-gradient(to top, #0d0d1a, transparent); }
+  
+  .stats-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .stat-card {
+    flex: 1;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+  }
+  
+  .stat-label {
+    font-family: 'Kanit', sans-serif;
+    font-size: 11px;
+    color: rgba(255,215,0,0.6);
+    display: block;
+    margin-bottom: 2px;
+  }
+  
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFD700;
+  }
+  
+  .bet-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .bet-label {
+    font-family: 'Kanit', sans-serif;
+    font-size: 13px;
+    color: rgba(255,215,0,0.7);
+    white-space: nowrap;
+  }
+  
+  .bet-btn {
+    background: rgba(255,215,0,0.1);
+    border: 1px solid rgba(255,215,0,0.4);
+    border-radius: 6px;
+    color: #FFD700;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .bet-btn:hover { background: rgba(255,215,0,0.2); }
+  .bet-btn:active { transform: scale(0.95); }
+  
+  .bet-display {
+    flex: 1;
+    text-align: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFD700;
+  }
+  
+  .spin-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    color: #1a0a2e;
+    cursor: pointer;
+    letter-spacing: 3px;
+    box-shadow: 0 4px 20px rgba(255,165,0,0.4);
+    transition: all 0.2s;
+  }
+  
+  .spin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255,165,0,0.6); }
+  .spin-btn:active:not(:disabled) { transform: translateY(0); }
+  .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .message-area {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  
+  .message {
+    font-family: 'Kanit', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: transparent;
+    transition: all 0.3s;
+  }
+  
+  .message.win { color: #FFD700; background: rgba(255,215,0,0.15); animation: pulse 0.5s ease infinite alternate; }
+  .message.lose { color: rgba(255,255,255,0.5); }
+  .message.jackpot { color: #FFD700; font-size: 22px; animation: jackpot-anim 0.3s ease infinite alternate; }
+  
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+  @keyframes jackpot-anim { from { transform: scale(1); text-shadow: 0 0 10px gold; } to { transform: scale(1.1); text-shadow: 0 0 30px gold; } }
+  
+  .win-flash {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,215,0,0.15);
+    border-radius: 20px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  .paytable {
+    margin-top: 20px;
+    max-width: 400px;
+    width: 100%;
+  }
+  
+  .paytable-title {
+    font-family: 'Kanit', sans-serif;
+    font-size: 13px;
+    color: rgba(255,215,0,0.6);
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+  
+  .paytable-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  
+  .pay-item {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 8px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+  
+  .pay-sym { font-size: 20px; display: block; }
+  .pay-mult { font-family: 'Orbitron', monospace; font-size: 11px; color: #FFD700; }
+</style>
+</head>
+<body>
+
+<div class="slot-wrapper" id="slotWrapper">
+  <div class="win-flash" id="winFlash"></div>
+  <div class="machine-title">🎰 LUCKY SPIN</div>
+  <div class="subtitle">กดหมุน เพื่อเริ่มเกม</div>
+  
+  <div class="machine-body">
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-label">เหรียญ</span>
+        <span class="stat-value" id="coins">1000</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">ชนะทั้งหมด</span>
+        <span class="stat-value" id="totalWon">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">รอบที่เล่น</span>
+        <span class="stat-value" id="spins">0</span>
+      </div>
+    </div>
+    
+    <div class="message-area">
+      <div class="message" id="message">กดหมุนเพื่อเริ่ม!</div>
+    </div>
+    
+    <div class="reels-container">
+      <div class="win-line"></div>
+      <div class="reel" id="reel0"><div class="reel-inner" id="inner0"></div><div class="reel-overlay-top"></div><div class="reel-overlay-bottom"></div></div>
+      <div class="reel" id="reel1"><div class="reel-inner" id="inner1"></div><div class="reel-overlay-top"></div><div class="reel-overlay-bottom"></div></div>
+      <div class="reel" id="reel2"><div class="reel-inner" id="inner2"></div><div class="reel-overlay-top"></div><div class="reel-overlay-bottom"></div></div>
+    </div>
+    
+    <div class="bet-row">
+      <span class="bet-label">เดิมพัน:</span>
+      <button class="bet-btn" id="betDown">-</button>
+      <span class="bet-display" id="betDisplay">10</span>
+      <button class="bet-btn" id="betUp">+</button>
+    </div>
+    
+    <button class="spin-btn" id="spinBtn">▶ SPIN</button>
+  </div>
+  
+  <div class="paytable">
+    <div class="paytable-title">ตารางรางวัล (3 เหมือน)</div>
+    <div class="paytable-grid" id="paytable"></div>
+  </div>
+</div>
+
+<script>
+const SYMBOLS = [
+  { sym: '🍒', name: 'cherry', mult: 3 },
+  { sym: '🍋', name: 'lemon', mult: 4 },
+  { sym: '🍇', name: 'grape', mult: 5 },
+  { sym: '🔔', name: 'bell', mult: 8 },
+  { sym: '⭐', name: 'star', mult: 10 },
+  { sym: '💎', name: 'diamond', mult: 15 },
+  { sym: '7️⃣', name: 'seven', mult: 25 },
+];
+
+const WEIGHTS = [30, 25, 20, 12, 7, 4, 2];
+
+let coins = 1000;
+let totalWon = 0;
+let spinCount = 0;
+let bet = 10;
+let spinning = false;
+
+function weightedRandom() {
+  const total = WEIGHTS.reduce((a,b)=>a+b,0);
+  let r = Math.random() * total;
+  for(let i=0;i<WEIGHTS.length;i++){
+    r -= WEIGHTS[i];
+    if(r<=0) return i;
+  }
+  return WEIGHTS.length-1;
+}
+
+function buildReel(innerId) {
+  const inner = document.getElementById(innerId);
+  inner.innerHTML = '';
+  const pool = [];
+  for(let i=0;i<20;i++) pool.push(SYMBOLS[weightedRandom()]);
+  pool.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'symbol';
+    div.textContent = s.sym;
+    inner.appendChild(div);
+  });
+  const first = inner.children[0].cloneNode(true);
+  inner.appendChild(first);
+  inner.style.transform = 'translateY(-680px)';
+  return pool;
+}
+
+let reelPools = [[], [], []];
+
+function initReels() {
+  for(let i=0;i<3;i++) {
+    reelPools[i] = buildReel('inner'+i);
+  }
+  showMiddleSymbols([0,0,0]);
+}
+
+function showMiddleSymbols(indices) {
+  for(let i=0;i<3;i++) {
+    const inner = document.getElementById('inner'+i);
+    const targetIdx = indices[i];
+    const offset = -(targetIdx * 40) - 40;
+    inner.style.transition = 'none';
+    inner.style.transform = `translateY(${offset}px)`;
+  }
+}
+
+async function spinReel(reelIdx, duration, finalSymIdx) {
+  return new Promise(resolve => {
+    const inner = document.getElementById('inner'+reelIdx);
+    const pool = reelPools[reelIdx];
+    const totalItems = pool.length;
+    
+    let startTime = null;
+    const totalDistance = (totalItems - 1) * 40;
+    
+    function animate(ts) {
+      if(!startTime) startTime = ts;
+      const elapsed = ts - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const targetPos = -(finalSymIdx * 40) - 40;
+      const startPos = -(0 * 40) - 40;
+      const spinExtra = -totalDistance * 2;
+      
+      if(progress < 0.85) {
+        const spinProgress = progress / 0.85;
+        const pos = startPos + spinExtra * spinProgress;
+        const wrapped = ((pos % (totalItems * 40)) - (totalItems * 40)) % (totalItems * 40);
+        inner.style.transition = 'none';
+        inner.style.transform = `translateY(${wrapped}px)`;
+      } else {
+        const snapProgress = (progress - 0.85) / 0.15;
+        const eased = 1 - Math.pow(1 - snapProgress, 3);
+        const currentPos = parseFloat(inner.style.transform.replace('translateY(','').replace('px)','')) || 0;
+        if(Math.abs(currentPos - targetPos) > 5 || snapProgress < 0.1) {
+          const pos = currentPos + (targetPos - currentPos) * eased;
+          inner.style.transition = 'none';
+          inner.style.transform = `translateY(${pos}px)`;
+        }
+      }
+      
+      if(progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        inner.style.transition = 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1)';
+        inner.style.transform = `translateY(${targetPos}px)`;
+        setTimeout(resolve, 150);
+      }
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+async function doSpin() {
+  if(spinning) return;
+  if(coins < bet) {
+    setMessage('เหรียญไม่พอ! 😢', 'lose');
+    return;
+  }
+  
+  spinning = true;
+  coins -= bet;
+  spinCount++;
+  updateStats();
+  document.getElementById('spinBtn').disabled = true;
+  setMessage('กำลังหมุน...', '');
+  
+  const results = [weightedRandom(), weightedRandom(), weightedRandom()];
+  
+  reelPools = [
+    buildReelWithResult(0, results[0]),
+    buildReelWithResult(1, results[1]),
+    buildReelWithResult(2, results[2]),
+  ];
+  
+  const delays = [600, 900, 1200];
+  const promises = results.map((symIdx, i) => {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        spinReel(i, delays[i] + 400, symIdx + 2).then(resolve);
+      }, i * 120);
+    });
+  });
+  
+  await Promise.all(promises);
+  
+  const syms = results.map(i => SYMBOLS[i]);
+  evaluateResult(syms);
+  
+  spinning = false;
+  document.getElementById('spinBtn').disabled = false;
+}
+
+function buildReelWithResult(reelIdx, targetSymIdx) {
+  const inner = document.getElementById('inner'+reelIdx);
+  inner.innerHTML = '';
+  const pool = [];
+  
+  for(let i=0;i<2;i++) pool.push(SYMBOLS[weightedRandom()]);
+  pool.push(SYMBOLS[targetSymIdx]);
+  for(let i=0;i<17;i++) pool.push(SYMBOLS[weightedRandom()]);
+  
+  pool.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'symbol';
+    div.textContent = s.sym;
+    inner.appendChild(div);
+  });
+  inner.style.transition = 'none';
+  inner.style.transform = 'translateY(-40px)';
+  reelPools[reelIdx] = pool;
+  return pool;
+}
+
+function evaluateResult(syms) {
+  const allSame = syms[0].name === syms[1].name && syms[1].name === syms[2].name;
+  const twoSame = syms[0].name === syms[1].name || syms[1].name === syms[2].name || syms[0].name === syms[2].name;
+  
+  if(allSame) {
+    const mult = syms[0].mult;
+    const win = bet * mult;
+    coins += win;
+    totalWon += win;
+    updateStats();
+    
+    if(syms[0].name === 'seven') {
+      setMessage(`🎉 JACKPOT! +${win} เหรียญ! 🎉`, 'jackpot');
+    } else {
+      setMessage(`✨ ชนะ! +${win} เหรียญ (x${mult})`, 'win');
+    }
+    flashWin();
+  } else if(twoSame) {
+    const win = bet * 1;
+    coins += win;
+    totalWon += win;
+    updateStats();
+    setMessage(`👍 2 เหมือน! คืนเดิมพัน`, 'win');
+  } else {
+    setMessage(`เกือบแล้ว... ลองใหม่อีกครั้ง`, 'lose');
+  }
+  
+  if(coins <= 0) {
+    setTimeout(() => {
+      coins = 500;
+      setMessage('หมดเหรียญ! รับโบนัส 500 🎁', 'win');
+      updateStats();
+    }, 1500);
+  }
+}
+
+function flashWin() {
+  const flash = document.getElementById('winFlash');
+  flash.style.opacity = '1';
+  setTimeout(() => flash.style.opacity = '0', 400);
+  setTimeout(() => { flash.style.opacity = '1'; setTimeout(() => flash.style.opacity = '0', 300); }, 700);
+}
+
+function setMessage(text, cls) {
+  const el = document.getElementById('message');
+  el.textContent = text;
+  el.className = 'message ' + cls;
+}
+
+function updateStats() {
+  document.getElementById('coins').textContent = coins.toLocaleString();
+  document.getElementById('totalWon').textContent = totalWon.toLocaleString();
+  document.getElementById('spins').textContent = spinCount;
+}
+
+function updateBet() {
+  document.getElementById('betDisplay').textContent = bet;
+}
+
+document.getElementById('spinBtn').addEventListener('click', doSpin);
+document.getElementById('betUp').addEventListener('click', () => {
+  const opts = [5,10,25,50,100];
+  const idx = opts.indexOf(bet);
+  if(idx < opts.length-1) { bet = opts[idx+1]; updateBet(); }
+});
+document.getElementById('betDown').addEventListener('click', () => {
+  const opts = [5,10,25,50,100];
+  const idx = opts.indexOf(bet);
+  if(idx > 0) { bet = opts[idx-1]; updateBet(); }
+});
+
+const ptGrid = document.getElementById('paytable');
+SYMBOLS.slice().reverse().forEach(s => {
+  const div = document.createElement('div');
+  div.className = 'pay-item';
+  div.innerHTML = `<span class="pay-sym">${s.sym}</span><span class="pay-mult">x${s.mult}</span>`;
+  ptGrid.appendChild(div);
+});
+
+initReels();
+setMessage('กดหมุนเพื่อเริ่ม! 🎰', '');
+</script>
+</body>
+</html>
